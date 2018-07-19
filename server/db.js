@@ -1,43 +1,39 @@
-const BlueBird = require("bluebird");
-const mysql = require("mysql");
+const dbConfig = require("./config");
 
-BlueBird.promisifyAll(require("mysql/lib/Pool").prototype);
-
-const pool = mysql.createPool({
-  connectionLimit: 50,
-  host: "localhost",
-  user: "app-user",
-  password: "jeferson97",
-  database: "app_test_db"
+const knex = require("knex")({
+  client: "mysql",
+  version: "8.0.11",
+  connection: dbConfig.test,
+  pool: dbConfig.test_pool
 });
 
 exports.registerUser = (login, password) => {
-  const sqlAddUser = "INSERT INTO users (`login`, `password`) VALUES (?, ?);";
-  return pool.queryAsync(sqlAddUser, [login, password])
-    .then(result => {
-      return getUserById(result.insertId);
+  return knex("users")
+    .insert({login: login, password: password})
+    .then(idOfInsertedUser => {
+      return getUserById(idOfInsertedUser);
     });
 };
 
 const getUserById = exports.getUserById = (id) => {
-  const sqlGetUserById = `SELECT * FROM users WHERE id = ? LIMIT 1;`;
-  return pool.queryAsync(sqlGetUserById, [id])
+  return knex("users")
+    .where({id: id})
     .then(resultUsers => {
       return resultUsers[0];
     });
 };
 
 exports.getAllUsers = () => {
-  const sqlGetAllUsers = `SELECT * FROM users;`;
-  return pool.queryAsync(sqlGetAllUsers)
+  return knex("users")
+    .select("*")
     .then(resultUsers => {
       return resultUsers;
     });
 };
 
-exports.deleteAllUsers = () => {
-  const sqlDeleteAllUsers = `DELETE FROM users;`;
-  return pool.queryAsync(sqlDeleteAllUsers)
+exports.truncateTableUsers = () => {
+  return knex("users")
+    .truncate()
     .then(result => {
       return result;
     });
