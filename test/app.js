@@ -1,7 +1,10 @@
 /* eslint-disable handle-callback-err,no-useless-escape,no-undef */
 const chai = require("chai");
 const chaiHttp = require("chai-http");
-const db = require("../server/db");
+const BlueBird = require("bluebird");
+const jwt = BlueBird.promisifyAll(require("jsonwebtoken"));
+const db = require("../server/db/db");
+const config = require("../server/config");
 
 const urlBase = "http://localhost:8080/";
 
@@ -620,7 +623,7 @@ describe("Testing API", () => {
                     validToken = responseAuthorize.body.token;
                     done();
                   });
-              };
+              }
             });
         })
         .catch(err => {
@@ -691,6 +694,63 @@ describe("Testing API", () => {
           } else {
             chai.expect(responseUsers.statusCode).to.equal(400);
             chai.expect(responseUsers.body.message).to.equal("Authorization header wasn't found or Auth Header is empty");
+            done();
+          }
+        });
+    });
+
+    it("returns status 401 on request with wrong(Malformed) JWT", (done) => {
+      chai
+        .request(urlBase + "api/")
+        .get("users")
+        .set("content-type", "application/x-www-form-urlencoded")
+        .set("authorization", "Bearer wrong-token")
+        .end((error, responseUsers, bodyUsers) => {
+          if (error) {
+            return done(error);
+          } else {
+            chai.expect(responseUsers.statusCode).to.equal(401);
+            chai.expect(responseUsers.body.message).to.equal("jwt malformed");
+            done();
+          }
+        });
+    });
+
+    // should return datetime of expiration in this situation?
+    it("returns status 401 on request with wrong(Expired) JWT", (done) => {
+      const expiredToken = jwt.sign({
+        id: 1,
+        exp: Math.floor(Date.now() / 1000) - 10000// expired 10s before
+      }, config.secret);
+      chai
+        .request(urlBase + "api/")
+        .get("users")
+        .set("content-type", "application/x-www-form-urlencoded")
+        .set("authorization", "Bearer " + expiredToken)
+        .end((error, responseUsers, bodyUsers) => {
+          if (error) {
+            return done(error);
+          } else {
+            chai.expect(responseUsers.statusCode).to.equal(401);
+            chai.expect(responseUsers.body.message).to.equal("jwt expired");
+            done();
+          }
+        });
+    });
+
+    // Ask later
+    it("returns status 400 on request with valid JWT without 'Bearer' signed in header", (done) => {
+      chai
+        .request(urlBase + "api/")
+        .get("users")
+        .set("content-type", "application/x-www-form-urlencoded")
+        .set("authorization", validToken)
+        .end((error, responseUsers, bodyUsers) => {
+          if (error) {
+            return done(error);
+          } else {
+            chai.expect(responseUsers.statusCode).to.equal(400);
+            chai.expect(responseUsers.body.message).to.equal("Token wasn't sent");
             done();
           }
         });

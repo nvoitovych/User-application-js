@@ -1,11 +1,12 @@
 const express = require("express");
-const jwt = require("jsonwebtoken");
+const BlueBird = require("bluebird");
+const jwt = BlueBird.promisifyAll(require("jsonwebtoken"));
 const config = require("../config");
-const db = require("../db");
+const db = require("../db/db");
 
 const router = express.Router();
 
-router.get("/users", (req, res) => {
+router.get("/users", async (req, res) => {
   const authorizationHeaderExists = req.headers["authorization"];
 
   if (!authorizationHeaderExists) {
@@ -22,36 +23,38 @@ router.get("/users", (req, res) => {
   if (!token) {
     res.status(400).send({code: 400, status: "BAD_REQUEST", message: "Token wasn't sent"});
   } else {
-    jwt.verify(token, config.secret, (err, decoded) => {
-      if (err) {
-        res.status(401).send({code: 401, status: "UNAUTHORIZED", message: "Wrong token"});
-      } else {
-        db.getAllUsers()
-          .then(resultUsers => {
-            res.status(200).send(resultUsers);
-          })
-          .catch(error => {
-            switch (error.code) {
-              case "ER_ACCESS_DENIED_ERROR": {
-                res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
-                break;
-              }
-              case "ER_DBACCESS_DENIED_ERROR": {
-                res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
-                break;
-              }
-              case "ER_NOT_SUPPORTED_AUTH_MODE": {
-                res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
-                break;
-              }
-              default: {
-                res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
-                break;
-              }
-            }
-          });
-      }
-    });
+    const decode = await jwt
+      .verifyAsync(token, config.secret)
+      .catch(error => {
+        switch (error.name) {
+          case "TokenExpiredError": {
+            res.status(401).send({code: 401, status: "UNAUTHORIZED", message: error.message});
+            break;
+          }
+          case "JsonWebTokenError": {
+            res.status(401).send({code: 401, status: "UNAUTHORIZED", message: error.message});
+            break;
+          }
+          default: {
+            res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+          }
+        }
+      });
+
+    if (typeof decode === "undefined") {
+      return;
+    }
+    const resultUsers = await db.getAllUsers()
+      .catch(error => {
+        switch (error.code) {
+          default: {
+            res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+          }
+        }
+      });
+    if (typeof decode !== "undefined") {
+      res.status(200).send(resultUsers);
+    }
   }
 });
 

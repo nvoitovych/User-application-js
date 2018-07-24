@@ -5,7 +5,7 @@ module.exports = {
     host: "localhost",
     user: "app-user",
     password: "jeferson97",
-    database: "app_test_db"
+    database: "app_db"
   },
   test: {
     connectionLimit: 50,
