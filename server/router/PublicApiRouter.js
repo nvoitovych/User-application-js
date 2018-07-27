@@ -2,7 +2,7 @@ const express = require("express");
 const Joi = require("joi");
 const BlueBird = require("bluebird");
 const jwt = BlueBird.promisifyAll(require("jsonwebtoken"));
-const config = require("../config");
+const config = require("../../config");
 const db = require("../db/db");
 
 const router = express.Router();
@@ -81,6 +81,7 @@ router.post("/authorize", async (req, res) => {
           break;
         }
       }
+      return;
     });
 
   if (!user) {

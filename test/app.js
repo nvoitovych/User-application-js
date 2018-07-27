@@ -4,7 +4,7 @@ const chaiHttp = require("chai-http");
 const BlueBird = require("bluebird");
 const jwt = BlueBird.promisifyAll(require("jsonwebtoken"));
 const db = require("../server/db/db");
-const config = require("../server/config");
+const config = require("../config");
 
 const urlBase = "http://localhost:8080/";
 
@@ -89,6 +89,8 @@ describe("Testing Public API", () => {
         .set("content-type", "application/x-www-form-urlencoded")
         .send({login: "admin1", password: "admin1"})
         .end((error, response, body) => {
+          console.log("Error: ", error);
+          console.log("Response body: ", response.body);
           if (error) {
             return done(error);
           } else {

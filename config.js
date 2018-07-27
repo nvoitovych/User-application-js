@@ -3,14 +3,14 @@ module.exports = {
   development: {
     connectionLimit: 50,
     host: "localhost",
-    user: "app-user",
+    user: "app_user",
     password: "jeferson97",
     database: "app_db"
   },
   test: {
     connectionLimit: 50,
     host: "localhost",
-    user: "app-user",
+    user: "app_user",
     password: "jeferson97",
     database: "app_test_db"
   },

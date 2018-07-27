@@ -1,7 +1,7 @@
 const express = require("express");
 const BlueBird = require("bluebird");
 const jwt = BlueBird.promisifyAll(require("jsonwebtoken"));
-const config = require("../config");
+const config = require("../../config");
 const db = require("../db/db");
 
 const router = express.Router();
