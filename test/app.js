@@ -10,24 +10,6 @@ const urlBase = "http://localhost:8080/";
 
 chai.use(chaiHttp);
 
-describe("Testing DB Connection", () => {
-  // it("returns status 500 on adding new user to DB with wrong DB name", (done) => {
-  //   chai
-  //     .request(urlPublicApiBase)
-  //     .post(path)
-  //     .set("content-type", "application/x-www-form-urlencoded")
-  //     .send({login: "admin1", password: "admin1"})
-  //     .end((error, response, body) => {
-  //       if (error) {
-  //         return done(error);
-  //       } else {
-  //         chai.expect(response.statusCode).to.equal(500);
-  //         done();
-  //       }
-  //     });
-  // });
-});
-
 describe("Testing Public API", () => {
   const urlPublicApiBase = urlBase + "publicapi/";
 
@@ -59,26 +41,12 @@ describe("Testing Public API", () => {
     const path = "register";
 
     beforeEach((done) => {
-      db.truncateTableUsers()
+      db.deleteAllAccounts()
+        .then(error => {
+          db.resetAutoIncrementInAccount();
+        })
         .then(error => {
           done();
-        });
-    });
-
-    it("returns the created resource on success", (done) => {
-      chai
-        .request(urlPublicApiBase)
-        .post(path)
-        .set("content-type", "application/x-www-form-urlencoded")
-        .send({login: "admin1", password: "admin1"})
-        .end((error, response, body) => {
-          if (error) {
-            return done(error);
-          } else {
-            chai.expect(response.body.login).to.equal("admin1");
-            chai.expect(response.body.password).to.equal("admin1");
-            done();
-          }
         });
     });
 
@@ -530,7 +498,10 @@ describe("Testing Public API", () => {
     const path = "authorize";
 
     before(done => {
-      db.truncateTableUsers()
+      db.deleteAllUsers()
+        .then(err => {
+          db.resetAutoIncrementInAccount();
+        })
         .then(err => {
           chai
             .request(urlPublicApiBase)
@@ -607,7 +578,10 @@ describe("Testing API", () => {
 
   describe("GET /users", () => {
     before(done => {
-      db.truncateTableUsers()
+      db.deleteAllUsers()
+        .then(err => {
+          db.resetAutoIncrementInAccount();
+        })
         .then(err => {
           chai
             .request(urlBase + "publicapi/")
@@ -643,7 +617,8 @@ describe("Testing API", () => {
           if (error) {
             return done(error);
           } else {
-            chai.expect(responseUsers.body).to.deep.equal([{id: 1, login: "admin1", password: "admin1"}]);
+            chai.expect(responseUsers.body[0].id).to.equal(1);
+            chai.expect(responseUsers.body[0].login).to.equal("admin1");
             chai.expect(responseUsers.statusCode).to.equal(200);
             done();
           }

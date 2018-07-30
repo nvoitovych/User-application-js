@@ -44,7 +44,7 @@ router.get("/users", async (req, res) => {
     if (typeof decode === "undefined") {
       return;
     }
-    const resultUsers = await db.getAllUsers()
+    const resultAccounts = await db.getAllAccounts()
       .catch(error => {
         switch (error.code) {
           default: {
@@ -53,7 +53,73 @@ router.get("/users", async (req, res) => {
         }
       });
     if (typeof decode !== "undefined") {
-      res.status(200).send(resultUsers);
+      res.status(200).send(resultAccounts);
+    }
+  }
+});
+
+router.get("/user/:userCredentialsId/coordinates", async (req, res) => {
+  const authorizationHeaderExists = req.headers["authorization"];
+
+  if (!authorizationHeaderExists) {
+    res.status(400).send({
+      code: 400,
+      status: "BAD_REQUEST",
+      message: "Authorization header wasn't found or Auth Header is empty"
+    });
+    return;
+  }
+
+  const token = req.headers["authorization"].split(" ")[1]; // get token
+
+  if (!token) {
+    res.status(400).send({code: 400, status: "BAD_REQUEST", message: "Token wasn't sent"});
+  } else {
+    const decode = await jwt
+      .verifyAsync(token, config.secret)
+      .catch(error => {
+        switch (error.name) {
+          case "TokenExpiredError": {
+            res.status(401).send({code: 401, status: "UNAUTHORIZED", message: error.message});
+            break;
+          }
+          case "JsonWebTokenError": {
+            res.status(401).send({code: 401, status: "UNAUTHORIZED", message: error.message});
+            break;
+          }
+          default: {
+            res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+          }
+        }
+      });
+
+    if (typeof decode === "undefined") {
+      return;
+    }
+
+    const resultAccount = await db.getAccountByUserCredentialsId(req.params.userCredentialsId)
+      .catch(error => {
+        switch (error.code) {
+          default: {
+            res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+          }
+        }
+      });
+
+    if (typeof decode === "undefined") {
+      return;
+    }
+
+    const resultCoordinates = await db.getUserCoordinatesByAccountId(resultAccount.accountId)
+      .catch(error => {
+        switch (error.code) {
+          default: {
+            res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+          }
+        }
+      });
+    if (typeof decode !== "undefined") {
+      res.status(200).send(resultCoordinates);
     }
   }
 });
