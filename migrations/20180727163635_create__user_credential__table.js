@@ -1,7 +1,7 @@
 
 exports.up = (knex, Promise) => {
   return knex.schema.createTable("user_credentials", (table) => {
-    table.increments("user_credentials_id"); // id serial primary key
+    table.increments("user_id"); // id serial primary key
     table.string("login").unique();
     table.string("password_hash").notNullable();
     table.string("username");

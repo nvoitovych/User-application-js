@@ -1,7 +1,7 @@
 const express = require("express");
 const Joi = require("joi");
 const BlueBird = require("bluebird");
-const bcrypt = BlueBird.promisifyAll(require("bcrypt"));
+const bcrypt = require("bcrypt");
 const jwt = BlueBird.promisifyAll(require("jsonwebtoken"));
 const config = require("../../config");
 const db = require("../db/db");
@@ -45,7 +45,7 @@ router.post("/register", async (req, res) => {
   }
 
   // Calculating a hash:
-  const hashedPassword = await bcrypt.hashAsync(password, 10)
+  const hashedPassword = await bcrypt.hash(password, 10)
     .catch(error => {
       console.log("Error: ", error);
       switch (error.code) {
@@ -61,7 +61,7 @@ router.post("/register", async (req, res) => {
     return;
   }
 
-  const resultUserCredentials = await db.registerUser(login, hashedPassword)
+  const resultUser = await db.createUser(login, hashedPassword)
     .catch(error => {
       switch (error.code) {
         case "ER_DUP_ENTRY": {
@@ -75,11 +75,11 @@ router.post("/register", async (req, res) => {
       }
     });
 
-  if (typeof resultUserCredentials === "undefined") {
+  if (typeof resultUser === "undefined") {
     return;
   }
 
-  const resultAccount = await db.createAccount(resultUserCredentials.userCredentialsId)
+  const resultAccount = await db.createAccount(resultUser.userId)
     .catch(error => {
       switch (error.code) {
         case "ER_DUP_ENTRY": {
@@ -98,7 +98,7 @@ router.post("/register", async (req, res) => {
   }
 
   const token = await jwt.signAsync({
-    id: resultUserCredentials.userCredentialsId,
+    userId: resultUser.userId,
     exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7) // exp in 1 week
   }, config.secret)
     .catch(error => {
@@ -116,25 +116,45 @@ router.post("/register", async (req, res) => {
 });
 
 router.post("/authorize", async (req, res) => {
-  const id = req.body.id;
   const login = req.body.login;
   const password = req.body.password;
 
-  const idSchema = Joi.object().keys({id: Joi.number().integer().min(0).max(999999999).required()});
   const loginSchema = Joi.object().keys({login: Joi.string().alphanum().min(3).max(30).required()});
   const passwordSchema = Joi.object().keys({password: Joi.string().regex(/^[a-zA-Z0-9]{3,8}$/).required()});
 
-  const idValidationResult = Joi.validate({id: id}, idSchema);
   const loginValidationResult = Joi.validate({login: login}, loginSchema);
   const passwordValidationResult = Joi.validate({password: password}, passwordSchema);
 
-  if (loginValidationResult.error || passwordValidationResult.error || idValidationResult.error) {
-    res.status(400).send({code: 400, status: "BAD_REQUEST", message: "Invalid id, login or password"});
+  if (loginValidationResult.error || passwordValidationResult.error) {
+    res.status(400).send({code: 400, status: "BAD_REQUEST", message: "Invalid login or password"});
     return;
   }
 
-  const userCredentials = await db.getUserCredentialsByUserCredentialsId(id)
+  const user = await db.getUserByLogin(login)
     .catch((error) => {
+      switch (error.code) {
+        case "USER_NOT_FOUND": {
+          // There is no user credentials with this login
+          res.status(401).send({code: 401, status: "UNAUTHORIZED", message: "There is no User with this login"});
+          break;
+        }
+        default: {
+          res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+          break;
+        }
+      }
+    });
+
+  if (typeof user === "undefined") {
+    return;
+  }
+  // if user Credentials with that login exists
+  // Validating a hash:
+  // Load hash from your password DB.
+  const isPasswordValid = await bcrypt.compare(password, user.passwordHash)
+    .catch(addBcryptType)
+    .catch(error => {
+      console.log("Error: ", error);
       switch (error.code) {
         default: {
           res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
@@ -143,20 +163,16 @@ router.post("/authorize", async (req, res) => {
       }
     });
 
-  if (typeof userCredentials === "undefined") {
+  if (typeof isPasswordValid === "undefined") {
     return;
   }
 
-  if (!userCredentials) {
-    // There is no user credentials with this id
-    res.status(401).send({code: 401, status: "UNAUTHORIZED", message: "There is no User with this id"});
-  } else {
-    // if user Credentials with that id exists
-    // Validating a hash:
-    // Load hash from your password DB.
-    const isPasswordValid = await bcrypt.compareAsync(password, userCredentials.passwordHash).catch(addBcryptType)
+  if (isPasswordValid) {
+    const token = await jwt.signAsync({
+      userId: user.userId,
+      exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7) // exp in 1 week
+    }, config.secret)
       .catch(error => {
-        console.log("Error: ", error);
         switch (error.code) {
           default: {
             res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
@@ -164,31 +180,12 @@ router.post("/authorize", async (req, res) => {
           }
         }
       });
-
-    if (typeof isPasswordValid === "undefined") {
-      return;
+    if (typeof token !== "undefined") {
+      res.status(200).send({token: token});
     }
-
-    if (isPasswordValid) {
-      const token = await jwt.signAsync({
-        id: userCredentials.userCredentialsId,
-        exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7) // exp in 1 week
-      }, config.secret)
-        .catch(error => {
-          switch (error.code) {
-            default: {
-              res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
-              break;
-            }
-          }
-        });
-      if (typeof token !== "undefined") {
-        res.status(200).send({token: token});
-      }
-    } else {
-      // Wrong password
-      res.status(401).send({code: 401, status: "UNAUTHORIZED", message: "Invalid password"});
-    }
+  } else {
+    // Wrong password
+    res.status(401).send({code: 401, status: "UNAUTHORIZED", message: "Wrong password"});
   }
 });
 

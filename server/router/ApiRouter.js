@@ -3,62 +3,11 @@ const BlueBird = require("bluebird");
 const jwt = BlueBird.promisifyAll(require("jsonwebtoken"));
 const config = require("../../config");
 const db = require("../db/db");
+const converter = require("../helpers/mapper");
 
 const router = express.Router();
 
-router.get("/users", async (req, res) => {
-  const authorizationHeaderExists = req.headers["authorization"];
-
-  if (!authorizationHeaderExists) {
-    res.status(400).send({
-      code: 400,
-      status: "BAD_REQUEST",
-      message: "Authorization header wasn't found or Auth Header is empty"
-    });
-    return;
-  }
-
-  const token = req.headers["authorization"].split(" ")[1]; // get token
-
-  if (!token) {
-    res.status(400).send({code: 400, status: "BAD_REQUEST", message: "Token wasn't sent"});
-  } else {
-    const decode = await jwt
-      .verifyAsync(token, config.secret)
-      .catch(error => {
-        switch (error.name) {
-          case "TokenExpiredError": {
-            res.status(401).send({code: 401, status: "UNAUTHORIZED", message: error.message});
-            break;
-          }
-          case "JsonWebTokenError": {
-            res.status(401).send({code: 401, status: "UNAUTHORIZED", message: error.message});
-            break;
-          }
-          default: {
-            res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
-          }
-        }
-      });
-
-    if (typeof decode === "undefined") {
-      return;
-    }
-    const resultAccounts = await db.getAllAccounts()
-      .catch(error => {
-        switch (error.code) {
-          default: {
-            res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
-          }
-        }
-      });
-    if (typeof decode !== "undefined") {
-      res.status(200).send(resultAccounts);
-    }
-  }
-});
-
-router.get("/user/:userCredentialsId/coordinates", async (req, res) => {
+router.get("/user", async (req, res) => {
   const authorizationHeaderExists = req.headers["authorization"];
 
   if (!authorizationHeaderExists) {
@@ -97,9 +46,51 @@ router.get("/user/:userCredentialsId/coordinates", async (req, res) => {
       return;
     }
 
-    const resultAccount = await db.getAccountByUserCredentialsId(req.params.userCredentialsId)
+    const resultAccount = await db.getAccountByUserId(decode.userId)
       .catch(error => {
         switch (error.code) {
+          default: {
+            res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+          }
+        }
+      });
+
+    if (typeof decode !== "undefined") {
+      res.status(200).send({account: converter.convertAccountFromObjectToJson(resultAccount)});
+    }
+  }
+});
+
+router.get("/user/:userId/coordinates", async (req, res) => {
+  const authorizationHeaderExists = req.headers["authorization"];
+  const userId = parseInt(req.params["userId"]);
+
+  if (!authorizationHeaderExists) {
+    res.status(400).send({
+      code: 400,
+      status: "BAD_REQUEST",
+      message: "Authorization header wasn't found or Auth Header is empty"
+    });
+    return;
+  }
+
+  const token = req.headers["authorization"].split(" ")[1]; // get token
+
+  if (!token) {
+    res.status(400).send({code: 400, status: "BAD_REQUEST", message: "Token wasn't sent"});
+  } else {
+    const decode = await jwt
+      .verifyAsync(token, config.secret)
+      .catch(error => {
+        switch (error.name) {
+          case "TokenExpiredError": {
+            res.status(401).send({code: 401, status: "UNAUTHORIZED", message: error.message});
+            break;
+          }
+          case "JsonWebTokenError": {
+            res.status(401).send({code: 401, status: "UNAUTHORIZED", message: error.message});
+            break;
+          }
           default: {
             res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
           }
@@ -110,7 +101,33 @@ router.get("/user/:userCredentialsId/coordinates", async (req, res) => {
       return;
     }
 
-    const resultCoordinates = await db.getUserCoordinatesByAccountId(resultAccount.accountId)
+    let isAllowedToViewCoordinates = false;
+
+    if (userId === decode.userId) {
+      isAllowedToViewCoordinates = true;
+    } else {
+      // get relationship of user of requested coordinates and user of user who is logged(with jwt)
+      // if return some relationship object - relationship exists --- should allow to view data
+      const relationship = await db.getRelationshipBetweenUsers(userId, decode.userId)
+        .catch(error => {
+          switch (error.code) {
+            default: {
+              res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+            }
+          }
+        });
+
+      if (typeof relationship !== "undefined" && relationship) {
+        isAllowedToViewCoordinates = true;
+      }
+    }
+
+    if (!isAllowedToViewCoordinates) {
+      res.status(403).send({code: 403, status: "FORBIDDEN", message: "Sorry, you are not allowed to view this information"});
+      return;
+    }
+
+    const resultCoordinates = await db.getUserCoordinatesByUserId(userId)
       .catch(error => {
         switch (error.code) {
           default: {
@@ -118,43 +135,15 @@ router.get("/user/:userCredentialsId/coordinates", async (req, res) => {
           }
         }
       });
-    if (typeof decode !== "undefined") {
-      res.status(200).send(resultCoordinates);
+
+    if (typeof resultCoordinates === "undefined") {
+      return;
+    }
+
+    if (typeof resultCoordinates !== "undefined") {
+      res.status(200).send({coordinates: converter.convertCoordinatesFromObjectArrayToJsonArray(resultCoordinates)});
     }
   }
 });
-
-// router.get("/users/:id/delete", (req, res) => {
-//   const authorizationHeaderContent = req.headers['authorization'];
-//   const token = authorizationHeaderContent.split(' ')[1]; // get token
-//
-//   if (!token) {
-//     res.status(401).send({ message: "Token was't sent" });
-//     return;
-//   }
-//
-//   jwt.verify(token, config.secret, (err, decoded) => {
-//     if (err) {
-//       return res.status(500, description='Internal Server Error').send({
-//         message: 'Failed to authenticate token.'
-//       });
-//     };
-//     if (decoded.id == req.params.id) {
-//       return res.status(405, description='Method Not Allowed').send({
-//         message: "Can't delete own account!"
-//       });
-//     }
-//   });
-//
-//   const connection = dbConnection();
-//
-//   connection.queryAsync(`SELECT * FROM users;`)
-//     .then((rows, fields) => {
-//       res.status(200).send({ users: rows });
-//     })
-//     .catch((err) => {
-//         res.status(500).send({ message: err.error });
-//     });
-// });
 
 module.exports = router;
