@@ -541,7 +541,7 @@ describe("Testing Public API", () => {
 
     before(done => {
       cleanDB()
-        .then(err => {
+        .then(
           chai
             .request(urlPublicApiBase)
             .post("register")
@@ -549,8 +549,8 @@ describe("Testing Public API", () => {
             .send({login: "admin1", password: "admin1"})
             .end((error, res, body) => {
               done();
-            });
-        })
+            })
+        )
         .catch(err => {
           console.log("Error: ", err);
         });
@@ -682,7 +682,7 @@ describe("Testing API", () => {
 
     before(done => {
       cleanDB()
-        .then(err => {
+        .then(
           chai
             .request(urlBase + "publicapi/")
             .post("register")
@@ -700,8 +700,8 @@ describe("Testing API", () => {
                     done();
                   });
               }
-            });
-        })
+            })
+        )
         .catch(err => {
           console.log("Error: ", err);
         });
@@ -781,6 +781,22 @@ describe("Testing API", () => {
         });
     });
 
+    it("returns status 400 on request without Authorization header", (done) => {
+      chai
+        .request(urlBase + "api/")
+        .get(path)
+        .set("content-type", "application/json")
+        .end((error, responseUsers) => {
+          if (error) {
+            return done(error);
+          } else {
+            chai.expect(responseUsers.statusCode).to.equal(400);
+            chai.expect(responseUsers.body.message).to.equal("Authorization header wasn't found or Auth Header is empty");
+            done();
+          }
+        });
+    });
+
     it("returns status 401 on request with wrong(Malformed) JWT", (done) => {
       chai
         .request(urlBase + "api/")
@@ -826,28 +842,12 @@ describe("Testing API", () => {
         .get(path)
         .set("content-type", "application/json")
         .set("authorization", validTokenOfAdmin)
-        .end((error, responseUsers, bodyUsers) => {
+        .end((error, responseUsers) => {
           if (error) {
             return done(error);
           } else {
             chai.expect(responseUsers.statusCode).to.equal(400);
             chai.expect(responseUsers.body.message).to.equal("Token wasn't sent");
-            done();
-          }
-        });
-    });
-
-    it("returns status 400 on request without Authorization header", (done) => {
-      chai
-        .request(urlBase + "api/")
-        .get(path)
-        .set("content-type", "application/json")
-        .end((error, responseUsers, bodyUsers) => {
-          if (error) {
-            return done(error);
-          } else {
-            chai.expect(responseUsers.statusCode).to.equal(400);
-            chai.expect(responseUsers.body.message).to.equal("Authorization header wasn't found or Auth Header is empty");
             done();
           }
         });
