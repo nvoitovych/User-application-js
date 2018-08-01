@@ -3,7 +3,7 @@ const BlueBird = require("bluebird");
 const jwt = BlueBird.promisifyAll(require("jsonwebtoken"));
 const config = require("../../config");
 const db = require("../db/db");
-const converter = require("../helpers/mapper");
+const converter = require("../helpers/entityMapper");
 
 const router = express.Router();
 
@@ -56,7 +56,7 @@ router.get("/user", async (req, res) => {
       });
 
     if (typeof decode !== "undefined") {
-      res.status(200).send({account: converter.convertAccountFromObjectToJson(resultAccount)});
+      res.status(200).send({account: converter.accountObjToJson(resultAccount)});
     }
   }
 });
@@ -141,7 +141,7 @@ router.get("/user/:userId/coordinates", async (req, res) => {
     }
 
     if (typeof resultCoordinates !== "undefined") {
-      res.status(200).send({coordinates: converter.convertCoordinatesFromObjectArrayToJsonArray(resultCoordinates)});
+      res.status(200).send({coordinates: converter.coordinatesObjArrayToJsonArray(resultCoordinates)});
     }
   }
 });

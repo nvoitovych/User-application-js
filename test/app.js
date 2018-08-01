@@ -1,14 +1,12 @@
 /* eslint-disable handle-callback-err,no-useless-escape,no-undef */
 const chai = require("chai");
-const chaiHttp = require("chai-http");
-const BlueBird = require("bluebird");
-const jwt = BlueBird.promisifyAll(require("jsonwebtoken"));
-const config = require("../config");
 const bcrypt = require("bcrypt");
-const converter = require("../server/helpers/mapper");
-
+const BlueBird = require("bluebird");
+const chaiHttp = require("chai-http");
+const jwt = BlueBird.promisifyAll(require("jsonwebtoken"));
 const env = process.env.NODE_ENV || "development";
 
+const config = require("../config");
 const knexConfig = require("../knexfile")[env];
 const knex = require("knex")(knexConfig);
 
@@ -101,7 +99,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin10", password: "admin10"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -117,7 +115,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin10", password: "adm"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -133,7 +131,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "adm", password: "admin1"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -149,7 +147,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "adm", password: "adm"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -165,7 +163,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin10", password: "admin123"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -181,7 +179,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin1234567890123456789012345", password: "admin1"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -197,7 +195,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin1234567890123456789012345", password: "admin123"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -213,7 +211,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin10", password: "adm"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -229,7 +227,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "adm", password: "admin1"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -245,7 +243,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "adm", password: "adm"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -261,7 +259,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({password: "admin10", login: "admin10"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -277,7 +275,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin10", password: "admin10", data: "More data"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -293,7 +291,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin1"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -309,7 +307,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin1", password: "ad"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -328,7 +326,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "ad", password: "admin1"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -347,7 +345,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "ad", password: "ad"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -363,7 +361,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin1", password: "admin1234"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -382,7 +380,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin12345678901234567890123456", password: "admin1"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -401,7 +399,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin12345678901234567890123456", password: "admin1234"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -420,7 +418,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({password: "admin1"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -436,7 +434,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "", password: "admin1"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -452,7 +450,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin1", password: ""})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -468,7 +466,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "", password: ""})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -484,17 +482,18 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin10", password: "admin10"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
             chai.expect(response.statusCode).to.equal(200);
 
-            chai.request(urlPublicApiBase)
+            chai
+              .request(urlPublicApiBase)
               .post(path)
               .set("content-type", "application/json")
               .send({login: "admin10", password: "admin10"})
-              .end((error, response, body) => {
+              .end((error, response) => {
                 if (error) {
                   return done(error);
                 } else {
@@ -512,7 +511,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin10", password: "admin10"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -522,7 +521,7 @@ describe("Testing Public API", () => {
               .post(path)
               .set("content-type", "application/json")
               .send({login: "admin10", password: "admin10"})
-              .end((error, response, body) => {
+              .end((error, response) => {
                 if (error) {
                   return done(error);
                 } else {
@@ -563,7 +562,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin1", password: "admin1"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -579,7 +578,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin1", password: "adm"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -598,7 +597,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "adm", password: "admin1"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -617,7 +616,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "ad", password: "admin1"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -636,7 +635,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin1", password: "ad"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -655,7 +654,7 @@ describe("Testing Public API", () => {
         .post(path)
         .set("content-type", "application/json")
         .send({login: "admin1", password: "admin12345"})
-        .end((error, response, body) => {
+        .end((error, response) => {
           if (error) {
             return done(error);
           } else {
@@ -689,14 +688,14 @@ describe("Testing API", () => {
             .post("register")
             .set("content-type", "application/json")
             .send({login: "admin1", password: "admin1"})
-            .end((err, responseRegister, bodyRegister) => {
+            .end((err, responseRegister) => {
               if (!err) {
                 chai
                   .request(urlBase + "publicapi/")
                   .post("authorize")
                   .set("content-type", "application/json")
                   .send({login: "admin1", password: "admin1"})
-                  .end((error, responseAuthorize, bodyAuthorize) => {
+                  .end((error, responseAuthorize) => {
                     validTokenOfAdmin = responseAuthorize.body.token;
                     done();
                   });
@@ -714,7 +713,7 @@ describe("Testing API", () => {
         .get(path)
         .set("content-type", "application/json")
         .set("authorization", "Bearer " + validTokenOfAdmin)
-        .end((error, responseUser, bodyUser) => {
+        .end((error, responseUser) => {
           if (error) {
             return done(error);
           } else {
@@ -737,7 +736,7 @@ describe("Testing API", () => {
         .get(path)
         .set("content-type", "application/json")
         .set("authorization", "Bearer  ")
-        .end((error, responseUsers, bodyUsers) => {
+        .end((error, responseUsers) => {
           if (error) {
             return done(error);
           } else {
@@ -754,7 +753,7 @@ describe("Testing API", () => {
         .get(path)
         .set("content-type", "application/json")
         .set("authorization", "Bearer ")
-        .end((error, responseUsers, bodyUsers) => {
+        .end((error, responseUsers) => {
           if (error) {
             return done(error);
           } else {
@@ -771,7 +770,7 @@ describe("Testing API", () => {
         .get(path)
         .set("content-type", "application/json")
         .set("authorization", "")
-        .end((error, responseUsers, bodyUsers) => {
+        .end((error, responseUsers) => {
           if (error) {
             return done(error);
           } else {
@@ -788,7 +787,7 @@ describe("Testing API", () => {
         .get(path)
         .set("content-type", "application/json")
         .set("authorization", "Bearer wrong-token")
-        .end((error, responseUsers, bodyUsers) => {
+        .end((error, responseUsers) => {
           if (error) {
             return done(error);
           } else {
@@ -810,7 +809,7 @@ describe("Testing API", () => {
         .get(path)
         .set("content-type", "application/json")
         .set("authorization", "Bearer " + expiredToken)
-        .end((error, responseUsers, bodyUsers) => {
+        .end((error, responseUsers) => {
           if (error) {
             return done(error);
           } else {
@@ -913,7 +912,7 @@ describe("Testing API", () => {
             {coordinates_id: 1, user_id: 1, latitude: 1, longitude: 1, created_at: new Date()},
             {coordinates_id: 2, user_id: 2, latitude: 2, longitude: 2, created_at: new Date()},
             {coordinates_id: 3, user_id: 3, latitude: 3, longitude: 3, created_at: new Date()},
-            {coordinates_id: 4, user_id: 4, latitude: 4, longitude: 4, created_at: new Date()},
+            {coordinates_id: 4, user_id: 4, latitude: 4, longitude: 4, created_at: new Date()}
           ]);
         })
         .then(async () => {
@@ -939,7 +938,7 @@ describe("Testing API", () => {
             .request(urlBase + "publicapi/")
             .post("authorize")
             .set("content-type", "application/json")
-            .send({login: "admin5", password: "admin5"})
+            .send({login: "admin5", password: "admin5"});
 
           validTokenOfAdmin5 = responseAuthorize.body.token;
           done();
@@ -956,7 +955,7 @@ describe("Testing API", () => {
         .get(path + "1/coordinates")
         .set("content-type", "application/json")
         .set("authorization", "Bearer " + validTokenOfAdmin1)
-        .end((error, responseUser, bodyUser) => {
+        .end((error, responseUser) => {
           if (error) {
             return done(error);
           } else {
@@ -978,7 +977,7 @@ describe("Testing API", () => {
         .get(path + "2/coordinates")
         .set("content-type", "application/json")
         .set("authorization", "Bearer " + validTokenOfAdmin1)
-        .end((error, responseUser, bodyUser) => {
+        .end((error, responseUser) => {
           if (error) {
             return done(error);
           } else {
@@ -1000,7 +999,7 @@ describe("Testing API", () => {
         .get(path + "3/coordinates")
         .set("content-type", "application/json")
         .set("authorization", "Bearer " + validTokenOfAdmin1)
-        .end((error, responseUser, bodyUser) => {
+        .end((error, responseUser) => {
           if (error) {
             return done(error);
           } else {
@@ -1022,7 +1021,7 @@ describe("Testing API", () => {
         .get(path + "5/coordinates")
         .set("content-type", "application/json")
         .set("authorization", "Bearer " + validTokenOfAdmin5)
-        .end((error, responseUser, bodyUser) => {
+        .end((error, responseUser) => {
           if (error) {
             return done(error);
           } else {
@@ -1040,7 +1039,7 @@ describe("Testing API", () => {
         .get(path + "3/coordinates")
         .set("content-type", "application/json")
         .set("authorization", "Bearer " + validTokenOfAdmin2)
-        .end((error, responseUser, bodyUser) => {
+        .end((error, responseUser) => {
           if (error) {
             return done(error);
           } else {
