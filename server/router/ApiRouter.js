@@ -102,6 +102,7 @@ router.get("/user/:userId/coordinates", async (req, res) => {
     }
 
     let isAllowedToViewCoordinates = false;
+    let isErrorOccurred = false;
 
     if (userId === decode.userId) {
       isAllowedToViewCoordinates = true;
@@ -113,6 +114,7 @@ router.get("/user/:userId/coordinates", async (req, res) => {
           switch (error.code) {
             default: {
               res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+              isErrorOccurred = true;
             }
           }
         });
@@ -120,6 +122,11 @@ router.get("/user/:userId/coordinates", async (req, res) => {
       if (typeof relationship !== "undefined" && relationship) {
         isAllowedToViewCoordinates = true;
       }
+    }
+
+    // check is error occurred during getting relationships from db
+    if (isErrorOccurred) {
+      return;
     }
 
     if (!isAllowedToViewCoordinates) {

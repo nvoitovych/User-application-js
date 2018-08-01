@@ -901,10 +901,10 @@ describe("Testing API", () => {
         })
         .then(async () => {
           await knex("relationship").insert([
-            {relationship_id: 1, user_id_who_share_data: 1, user_id_who_receive_data: 2},
-            {relationship_id: 2, user_id_who_share_data: 2, user_id_who_receive_data: 1},
-            {relationship_id: 3, user_id_who_share_data: 3, user_id_who_receive_data: 1},
-            {relationship_id: 4, user_id_who_share_data: 4, user_id_who_receive_data: 1}
+            {relationship_id: 1, user_id_1: 1, user_id_2: 2},
+            {relationship_id: 2, user_id_1: 2, user_id_2: 1},
+            {relationship_id: 3, user_id_1: 3, user_id_2: 1},
+            {relationship_id: 4, user_id_1: 4, user_id_2: 1}
           ]);
         })
         .then(async () => {
@@ -932,6 +932,15 @@ describe("Testing API", () => {
             .send({login: "admin2", password: "admin2"});
 
           validTokenOfAdmin2 = responseAuthorize.body.token;
+        })
+        .then(async () => {
+          const responseAuthorize = await chai
+            .request(urlBase + "publicapi/")
+            .post("authorize")
+            .set("content-type", "application/json")
+            .send({login: "admin3", password: "admin3"});
+
+          validTokenOfAdmin3 = responseAuthorize.body.token;
         })
         .then(async () => {
           const responseAuthorize = await chai
@@ -971,7 +980,7 @@ describe("Testing API", () => {
         });
     });
 
-    it("returns status 200 and json with array of coordinates for allowed User(Both side relationship 1-2, 2-1)", (done) => {
+    it("returns status 200 and json with array of coordinates for allowed User(Both side relationship added: 1-2, 2-1)", (done) => {
       chai
         .request(urlBase + "api/")
         .get(path + "2/coordinates")
@@ -993,7 +1002,7 @@ describe("Testing API", () => {
         });
     });
 
-    it("returns status 200 and json with array of coordinates for allowed User(One side: 3-1)", (done) => {
+    it("returns status 200 and json with array of coordinates for allowed User(One side relationship added: 3-1. Check with user 1)", (done) => {
       chai
         .request(urlBase + "api/")
         .get(path + "3/coordinates")
@@ -1015,7 +1024,29 @@ describe("Testing API", () => {
         });
     });
 
-    it("returns status 200 and json with array of coordinates for owner without any coordinates", (done) => {
+    it("returns status 200 and json with array of coordinates for allowed User(One side relationship added: 3-1. Check with user 3)", (done) => {
+      chai
+        .request(urlBase + "api/")
+        .get(path + "3/coordinates")
+        .set("content-type", "application/json")
+        .set("authorization", "Bearer " + validTokenOfAdmin3)
+        .end((error, responseUser) => {
+          if (error) {
+            return done(error);
+          } else {
+            chai.expect(responseUser.statusCode).to.equal(200);
+            chai.expect(responseUser.body).to.to.have.property("coordinates");
+            chai.expect(responseUser.body.coordinates[0].coordinatesId).to.equal(3);
+            chai.expect(responseUser.body.coordinates[0].userId).to.equal(3);
+            chai.expect(responseUser.body.coordinates[0].latitude).to.equal(3);
+            chai.expect(responseUser.body.coordinates[0].longitude).to.equal(3);
+            chai.expect(responseUser.body.coordinates[0]).to.to.have.property("createdAt");
+            done();
+          }
+        });
+    });
+
+    it("returns status 200 and json with array of coordinates for owner without any coordinates. User with id 5", (done) => {
       chai
         .request(urlBase + "api/")
         .get(path + "5/coordinates")
@@ -1033,12 +1064,12 @@ describe("Testing API", () => {
         });
     });
 
-    it("returns status 403 NOT allowed User", (done) => {
+    it("returns status 403 NOT allowed User(Id 5, check user with id 1)", (done) => {
       chai
         .request(urlBase + "api/")
-        .get(path + "3/coordinates")
+        .get(path + "1/coordinates")
         .set("content-type", "application/json")
-        .set("authorization", "Bearer " + validTokenOfAdmin2)
+        .set("authorization", "Bearer " + validTokenOfAdmin5)
         .end((error, responseUser) => {
           if (error) {
             return done(error);

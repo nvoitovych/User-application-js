@@ -126,8 +126,8 @@ const relationshipJsonToObj = exports.relationshipJsonToObj = (relationshipJson)
   if (typeof relationshipJson !== "undefined") {
     return {
       relationshipId: relationshipJson.relationship_id,
-      accountIdWhoShareData: relationshipJson.account_id_who_share_data,
-      accountIdWhoReceiveData: relationshipJson.account_id_who_receive_data
+      userId1: relationshipJson.user_id_1,
+      userId2: relationshipJson.user_id_2
     };
   }
 };
@@ -136,8 +136,8 @@ const relationshipObjToJson = exports.relationshipObjToJson = (relationshipObj) 
   if (typeof relationshipObj !== "undefined") {
     return {
       relationship_id: relationshipObj.relationshipId,
-      account_id_who_share_data: relationshipObj.accountIdWhoShareData,
-      account_id_who_receive_data: relationshipObj.accountIdWhoReceiveData
+      user_id_1: relationshipObj.userId1,
+      user_id_2: relationshipObj.userId2
     };
   }
 };

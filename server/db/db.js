@@ -66,9 +66,13 @@ const getCoordinatesById = exports.getCoordinatesById = async (coordinatesId) =>
   return converter.coordinatesJsonToObj(resultCoordinatesJsonArray[0]);
 };
 
-exports.getRelationshipBetweenUsers = async (userIdWhoShareData, userIdWhoReceiveData) => {
+exports.getRelationshipBetweenUsers = async (userId1, userId2) => {
   const resultRelationshipJsonArray = await knex("relationship").where(
-    {user_id_who_share_data: userIdWhoShareData, user_id_who_receive_data: userIdWhoReceiveData});
+    {user_id_1: userId1, user_id_2: userId2}).orWhere({user_id_1: userId2, user_id_2: userId1});
+  // another solution, but with bug: rel 1-1, rel 2-2 --- will give rel for user 1 and 2
+  // const resultRelationshipJsonArray = await knex("relationship")
+  //     .whereIn("user_id_1", [userId1, userId2])
+  //     .WhereIn("user_id_2", [userId1, userId2]);
   return converter.relationshipJsonToObj(resultRelationshipJsonArray[0]);
 };
 
@@ -80,22 +84,12 @@ exports.resetAutoIncrementInAccount = async () => {
   return knex.raw("ALTER TABLE account AUTO_INCREMENT = 1");
 };
 
-// exports.createRelationship = async (userIdWhoShareData, userIdWhoReceiveData) => {
-//   const idOfInsertedRelationship = await knex("relationship").insert({user_id_who_share_data: userIdWhoShareData, user_id_who_receive_data: userIdWhoReceiveData});
-//   return getRelationshipByRelationshipId(idOfInsertedRelationship);
+// exports.createRelationship = async (userId1, userId2) => {
+//   const insertedRelationshipId = await knex("relationship").insert({user_id_1: userId1, user_id_2: userId2});
+//   return getRelationshipById(insertedRelationshipId);
 // };
 //
-// const getRelationshipByRelationshipId = exports.getRelationshipByRelationshipId = async (relationshipId) => {
-//   const resultRelationshipInArray = await knex("relationship").where({relationship_id: relationshipId});
-//   return converter.relationshipJsonToObj(resultRelationshipInArray[0]);
-// };
-
-// exports.getRelationshipsByUserIdWhoShareData = async (userIdWhoShareData) => {
-//   const resultRelationshipInArray = await knex("relationship").where({user_id_who_share_data: userIdWhoShareData});
-//   return converter.relationshipsJsonArrayToObjArray(resultRelationshipInArray);
-// };
-//
-// exports.getRelationshipsByUserIdWhoReceiveData = async (userIdWhoReceiveData) => {
-//   const resultRelationshipInArray = await knex("relationship").where({user_id_who_receive_data: userIdWhoReceiveData});
-//   return converter.relationshipsJsonArrayToObjArray(resultRelationshipInArray);
+// const getRelationshipById = exports.getRelationshipById = async (relationshipId) => {
+//   const resultRelationshipJsonArray = await knex("relationship").where({relationship_id: relationshipId});
+//   return converter.relationshipJsonToObj(resultRelationshipJsonArray[0]);
 // };
