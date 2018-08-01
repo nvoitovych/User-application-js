@@ -1050,5 +1050,21 @@ describe("Testing API", () => {
           }
         });
     });
+
+    it("returns status 404 NOT found User/Page", (done) => {
+      chai
+        .request(urlBase + "api/")
+        .get(path + "6/coordinates")
+        .set("content-type", "application/json")
+        .set("authorization", "Bearer " + validTokenOfAdmin2)
+        .end((error, responseUser) => {
+          if (error) {
+            return done(error);
+          } else {
+            chai.expect(responseUser.statusCode).to.equal(404);
+            done();
+          }
+        });
+    });
   });
 });
