@@ -32,7 +32,7 @@ const getUserById = exports.getUserById = async (userId) => {
     // the array is defined and has at least one element
     return converter.userJsonToObj(resultUserJsonArray[0]);
   } else {
-    const error = new Error("User with specified login doesn't exist");
+    const error = new Error("User doesn't exists");
     error.code = "USER_NOT_FOUND";
     throw error;
   }
@@ -44,7 +44,7 @@ exports.getUserByLogin = async (login) => {
     // the array is defined and has at least one element
     return converter.userJsonToObj(resultUserJsonArray[0]);
   } else {
-    const error = new Error("User with specified login doesn't exist");
+    const error = new Error("User doesn't exists");
     error.code = "USER_NOT_FOUND";
     throw error;
   }

@@ -44,29 +44,68 @@ router.post("/register", async (req, res) => {
     }
   }
 
-  try {
-    // Calculating a hash:
-    const hashedPassword = await bcrypt.hash(password, 10).catch(addBcryptType);
-    const resultUser = await db.createUser(login, hashedPassword);
-    // automatically create account for just registered user
-    const resultAccount = await db.createAccount(resultUser.userId);
-    const token = await jwt.signAsync({
-      userId: resultUser.userId,
-      exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7) // exp in 1 week
-    }, config.secret);
+  // Calculating a hash:
+  const hashedPassword = await bcrypt.hash(password, 10)
+    .catch(error => {
+      switch (error.code) {
+        default: {
+          res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+          break;
+        }
+      }
+    });
 
+  if (typeof hashedPassword === "undefined") {
+    return;
+  }
+
+  const resultUser = await db.createUser(login, hashedPassword)
+    .catch(error => {
+      switch (error.code) {
+        case "ER_DUP_ENTRY": {
+          res.status(409).send({code: 409, status: "CONFLICT", message: "User already exists"});
+          break;
+        }
+        default: {
+          res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+          break;
+        }
+      }
+    });
+
+  if (typeof resultUser === "undefined") {
+    return;
+  }
+
+  const resultAccount = await db.createAccount(resultUser.userId)
+    .catch(error => {
+      switch (error.code) {
+        case "ER_DUP_ENTRY": {
+          res.status(409).send({code: 409, status: "CONFLICT", message: "User already exists"});
+          break;
+        }
+      }
+    });
+
+  if (typeof resultAccount === "undefined") {
+    return;
+  }
+
+  const token = await jwt.signAsync({
+    userId: resultUser.userId,
+    exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7) // exp in 1 week
+  }, config.secret)
+    .catch(error => {
+      switch (error.code) {
+        default: {
+          res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+          break;
+        }
+      }
+    });
+
+  if (typeof token !== "undefined") {
     res.status(200).send({token: token});
-  } catch (error) {
-    switch (error.code) {
-      case "ER_DUP_ENTRY": {
-        res.status(409).send({code: 409, status: "CONFLICT", message: "User already exists"});
-        break;
-      }
-      default: {
-        res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
-        break;
-      }
-    }
   }
 });
 
@@ -85,34 +124,60 @@ router.post("/authorize", async (req, res) => {
     return;
   }
 
-  try {
-    const user = await db.getUserByLogin(login);
-    // if user Credentials with that login exists
-    // Validating a hash:
-    // Load hash from your password DB.
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash).catch(addBcryptType);
-    if (isPasswordValid) {
-      const token = await jwt.signAsync({
-        userId: user.userId,
-        exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7) // exp in 1 week
-      }, config.secret);
+  const user = await db.getUserByLogin(login)
+    .catch((error) => {
+      switch (error.code) {
+        case "USER_NOT_FOUND": {
+          // There is no user credentials with this login
+          res.status(401).send({code: 401, status: "UNAUTHORIZED", message: "There is no User with this login"});
+          break;
+        }
+        default: {
+          res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+        }
+      }
+    });
+
+  if (typeof user === "undefined") {
+    return;
+  }
+  // if user Credentials with that login exists
+  // Validating a hash:
+  // Load hash from your password DB.
+  const isPasswordValid = await bcrypt.compare(password, user.passwordHash)
+    .catch(addBcryptType)
+    .catch(error => {
+      switch (error.code) {
+        default: {
+          res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+          break;
+        }
+      }
+    });
+
+  if (typeof isPasswordValid === "undefined") {
+    return;
+  }
+
+  if (isPasswordValid) {
+    const token = await jwt.signAsync({
+      userId: user.userId,
+      exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7) // exp in 1 week
+    }, config.secret)
+      .catch(error => {
+        switch (error.code) {
+          default: {
+            res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+            break;
+          }
+        }
+      });
+    if (typeof token !== "undefined") {
       res.status(200).send({token: token});
-    } else {
-      // Wrong password
-      res.status(401).send({code: 401, status: "UNAUTHORIZED", message: "Wrong password"});
     }
-  } catch (error) {
-    switch (error.code) {
-      case "USER_NOT_FOUND": {
-        // There is no user credentials with this login
-        res.status(401).send({code: 401, status: "UNAUTHORIZED", message: "There is no User with this login"});
-        break;
-      }
-      default: {
-        res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
-        break;
-      }
-    }
+  } else {
+    // Wrong password
+    res.status(401).send({code: 401, status: "UNAUTHORIZED", message: "Wrong password"});
   }
 });
 
