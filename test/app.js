@@ -14,46 +14,44 @@ const urlBase = "http://localhost:8080/";
 
 chai.use(chaiHttp);
 
-const cleanDB = () => {
-  return new Promise((resolve, reject) => {
-    const relationship = knex("relationship")
-      .del()
-      .catch((err) => {
-        console.log("\nError del relationship: ", err.message);
-      });
+const cleanDB = async () => {
+  const relationship = knex("relationship")
+    .del()
+    .catch((err) => {
+      console.log("\nError del relationship: ", err.message);
+    });
 
-    if (typeof relationship === "undefined") {
-      return;
-    }
+  if (typeof relationship === "undefined") {
+    throw Error();
+  }
 
-    const coordinates = knex("coordinates")
-      .del()
-      .catch((err) => {
-        console.log("\nError del coordinates: ", err.message);
-      });
+  const coordinates = knex("coordinates")
+    .del()
+    .catch((err) => {
+      console.log("\nError del coordinates: ", err.message);
+    });
 
-    if (typeof coordinates === "undefined") {
-      return;
-    }
+  if (typeof coordinates === "undefined") {
+    throw Error();
+  }
 
-    const account = knex("account")
-      .del()
-      .catch((err) => {
-        console.log("\nError del account: ", err.message);
-      });
+  const account = knex("account")
+    .del()
+    .catch((err) => {
+      console.log("\nError del account: ", err.message);
+    });
 
-    if (typeof account === "undefined") {
-      return;
-    }
+  if (typeof account === "undefined") {
+    throw Error();
+  }
 
-    const userCredentials = knex("user_credentials")
-      .del()
-      .catch((err) => {
-        console.log("\nError del user_credentials: ", err.message);
-      });
+  const userCredentials = knex("user_credentials")
+    .del()
+    .catch((err) => {
+      console.log("\nError del user_credentials: ", err.message);
+    });
 
-    resolve(userCredentials);
-  });
+  return userCredentials;
 };
 
 describe("Testing Public API", () => {
@@ -68,6 +66,8 @@ describe("Testing Public API", () => {
         .get(path)
         .end((error, response) => {
           chai.expect(response.statusCode).to.equal(200);
+          chai.expect(response.header).to.to.have.property("content-type");
+          chai.expect(response.header["content-type"]).to.contain("application/json");
           done();
         });
     });
@@ -78,6 +78,8 @@ describe("Testing Public API", () => {
         .get(path)
         .end((error, response) => {
           chai.expect(response.body.data).to.equal("It\'s alive!\nHello");
+          chai.expect(response.header).to.to.have.property("content-type");
+          chai.expect(response.header["content-type"]).to.contain("application/json");
           done();
         });
     });
@@ -104,6 +106,8 @@ describe("Testing Public API", () => {
             return done(error);
           } else {
             chai.expect(response.statusCode).to.equal(200);
+            chai.expect(response.header).to.to.have.property("content-type");
+            chai.expect(response.header["content-type"]).to.contain("application/json");
             done();
           }
         });
@@ -1093,6 +1097,8 @@ describe("Testing API", () => {
             return done(error);
           } else {
             chai.expect(responseUser.statusCode).to.equal(404);
+            chai.expect(responseUser.body.status).to.equal("NOT_FOUND");
+            chai.expect(responseUser.body.message).to.equal("User doesn't exists");
             done();
           }
         });

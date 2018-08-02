@@ -28,7 +28,14 @@ exports.getAccountByUserId = async (userId) => {
 
 const getUserById = exports.getUserById = async (userId) => {
   const resultUserJsonArray = await knex("user_credentials").where({user_id: userId}).limit(1);
-  return converter.userJsonToObj(resultUserJsonArray[0]);
+  if (typeof resultUserJsonArray !== "undefined" && resultUserJsonArray.length > 0) {
+    // the array is defined and has at least one element
+    return converter.userJsonToObj(resultUserJsonArray[0]);
+  } else {
+    const error = new Error("User with specified login doesn't exist");
+    error.code = "USER_NOT_FOUND";
+    throw error;
+  }
 };
 
 exports.getUserByLogin = async (login) => {
@@ -74,14 +81,6 @@ exports.getRelationshipBetweenUsers = async (userId1, userId2) => {
   //     .whereIn("user_id_1", [userId1, userId2])
   //     .WhereIn("user_id_2", [userId1, userId2]);
   return converter.relationshipJsonToObj(resultRelationshipJsonArray[0]);
-};
-
-exports.deleteAllAccounts = async () => {
-  return knex("account").whereNot("account_id", 0).del();
-};
-
-exports.resetAutoIncrementInAccount = async () => {
-  return knex.raw("ALTER TABLE account AUTO_INCREMENT = 1");
 };
 
 // exports.createRelationship = async (userId1, userId2) => {

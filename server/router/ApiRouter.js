@@ -8,9 +8,9 @@ const converter = require("../helpers/entityMapper");
 const router = express.Router();
 
 router.get("/user", async (req, res) => {
-  const authorizationHeaderExists = req.headers["authorization"];
+  const isAuthorizationHeaderExists = req.headers["authorization"];
 
-  if (!authorizationHeaderExists) {
+  if (!isAuthorizationHeaderExists) {
     res.status(400).send({
       code: 400,
       status: "BAD_REQUEST",
@@ -47,10 +47,10 @@ router.get("/user", async (req, res) => {
 });
 
 router.get("/user/:userId/coordinates", async (req, res) => {
-  const authorizationHeaderExists = req.headers["authorization"];
+  const isAuthorizationHeaderExists = req.headers["authorization"];
   const userId = parseInt(req.params["userId"]);
 
-  if (!authorizationHeaderExists) {
+  if (!isAuthorizationHeaderExists) {
     res.status(400).send({
       code: 400,
       status: "BAD_REQUEST",
@@ -73,6 +73,23 @@ router.get("/user/:userId/coordinates", async (req, res) => {
       if (userId === decode.userId) {
         isAllowedToViewCoordinates = true;
       } else {
+        const isUserExists = await db.getUserById(userId).catch(error => {
+          switch (error.code) {
+            case "USER_NOT_FOUND": {
+              // There is no user credentials with this id
+              res.status(404).send({code: 404, status: "NOT_FOUND", message: "User doesn't exists"});
+              break;
+            }
+            default: {
+              res.status(500).send({code: 500, status: "INTERNAL_SERVER_ERROR", message: "Internal server error"});
+            }
+          }
+        });
+
+        if (isUserExists === "undefined") {
+          return;
+        }
+
         // get relationship of user of requested coordinates and user of user who is logged(with jwt)
         // if return some relationship object - relationship exists --- should allow to view data
         const relationship = await db.getRelationshipBetweenUsers(userId, decode.userId)
