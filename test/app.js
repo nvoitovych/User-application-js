@@ -22,7 +22,7 @@ const cleanDB = async () => {
     });
 
   if (typeof relationship === "undefined") {
-    return;
+    throw Error();
   }
 
   const coordinates = knex("coordinates")
@@ -32,7 +32,7 @@ const cleanDB = async () => {
     });
 
   if (typeof coordinates === "undefined") {
-    return;
+    throw Error();
   }
 
   const account = knex("account")
@@ -42,7 +42,7 @@ const cleanDB = async () => {
     });
 
   if (typeof account === "undefined") {
-    return;
+    throw Error();
   }
 
   const userCredentials = knex("user_credentials")
