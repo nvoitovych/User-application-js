@@ -14,46 +14,44 @@ const urlBase = "http://localhost:8080/";
 
 chai.use(chaiHttp);
 
-const cleanDB = () => {
-  return new Promise((resolve, reject) => {
-    const relationship = knex("relationship")
-      .del()
-      .catch((err) => {
-        console.log("\nError del relationship: ", err.message);
-      });
+const cleanDB = async () => {
+  const relationship = knex("relationship")
+    .del()
+    .catch((err) => {
+      console.log("\nError del relationship: ", err.message);
+    });
 
-    if (typeof relationship === "undefined") {
-      return;
-    }
+  if (typeof relationship === "undefined") {
+    return;
+  }
 
-    const coordinates = knex("coordinates")
-      .del()
-      .catch((err) => {
-        console.log("\nError del coordinates: ", err.message);
-      });
+  const coordinates = knex("coordinates")
+    .del()
+    .catch((err) => {
+      console.log("\nError del coordinates: ", err.message);
+    });
 
-    if (typeof coordinates === "undefined") {
-      return;
-    }
+  if (typeof coordinates === "undefined") {
+    return;
+  }
 
-    const account = knex("account")
-      .del()
-      .catch((err) => {
-        console.log("\nError del account: ", err.message);
-      });
+  const account = knex("account")
+    .del()
+    .catch((err) => {
+      console.log("\nError del account: ", err.message);
+    });
 
-    if (typeof account === "undefined") {
-      return;
-    }
+  if (typeof account === "undefined") {
+    return;
+  }
 
-    const userCredentials = knex("user_credentials")
-      .del()
-      .catch((err) => {
-        console.log("\nError del user_credentials: ", err.message);
-      });
+  const userCredentials = knex("user_credentials")
+    .del()
+    .catch((err) => {
+      console.log("\nError del user_credentials: ", err.message);
+    });
 
-    resolve(userCredentials);
-  });
+  return userCredentials;
 };
 
 describe("Testing Public API", () => {
